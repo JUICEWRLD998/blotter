@@ -1,0 +1,3 @@
+# Drop a Bitget futures trade-history CSV export here (Spike B).
+# Redacted copy becomes the bitget-csv fixture; the raw file is gitignored.
+*.csv
