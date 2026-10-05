@@ -121,3 +121,40 @@ implementation.md §2.3 lists news/earnings/fear-greed in the market-context fam
 cut list drops news (#2) and earnings (#3) first. Resolution: implement the candle-based
 context tags (Bitget public data, no MCP dependency) in Phase 2 and land the MCP tags last,
 behind the cut line. **Phase 2's exit check depends on candles, not on MCP.**
+
+Confirmed correct by Spike C: the MCP server handshakes and lists its catalogue, but the
+Bitget US-data backend answered `503` on every `do_query` (~25 attempts, 40+ minutes). Had the
+MCP tags been on the critical path, Phase 2 would be blocked today.
+
+---
+
+## D8 — A `{maxLeverage}` rule reads account/position leverage, not the order
+
+**Date:** 2026-10-05 · **Phase:** 0 (Spike D), affects Phase 4
+
+`bgc discover --tool order --action place` returns the real `placeOrder` contract. Its fields
+are `category`, `symbol`, `qty`, `side`, `orderType` (required) and `price`, `timeInForce`,
+`posSide`, `clientOid`, `reduceOnly`, TP/SL (optional). **`leverage` is not among them** —
+leverage is an account/position setting, set through a different endpoint, not an order
+parameter.
+
+So `blotter check` cannot read a proposed leverage off the order it is asked to gate. For a
+`{ maxLeverage: N }` rule it must read the account's current leverage setting (or the open
+position's) and compare *that*, and it should say which it read in its output. `{ maxSizeMultiple }`,
+clock and behaviour rules are unaffected — those genuinely are order-time properties.
+
+This was not in the plan and would have been discovered late, at Phase 4, with `guard` already
+written against a wrong assumption.
+
+---
+
+## D9 — `placeOrder` does not require `--confirm`, so `guard` is the real gate
+
+**Date:** 2026-10-05 · **Phase:** 0 (Spike D), affects Phase 4
+
+The discovery payload reports `requiresConfirm: false` for `placeOrder` (only high-risk writes
+such as `cancelAll` and `withdraw` carry that flag). The implication for the product's central
+claim: nothing in `bgc` itself stops an agent from opening a position, so `blotter guard -- bgc ...`
+is not a convenience wrapper around an existing safety net — **it is the only thing standing
+between the agent and the order.** That is the honest framing for the README and the video, and
+it raises the priority of the wrapper being boring and reliable.
