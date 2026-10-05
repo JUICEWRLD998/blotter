@@ -1,0 +1,10 @@
+# Normalize line endings so this Windows checkout and any Linux/CI checkout
+# produce identical blobs. Without this, every file shows CRLF churn.
+* text=auto eol=lf
+
+# Binary-ish assets are left alone.
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
